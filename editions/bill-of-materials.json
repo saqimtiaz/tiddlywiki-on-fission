@@ -18,5 +18,10 @@
 		"name": "static-publishing-edition",
 		"description": "An experimental build with TW5's under development publishing framework. Use with caution!",
 		"url": "file://./static-publishing-wiki/output/index.html"
+	},
+	{
+		"name": "file-upload-wiki",
+		"description": "An experimental build with TW5's under development file upload plugin. Only for testing and development!",
+		"url": "file://./upload-files-wiki/output/index.html"
 	}
 ]
