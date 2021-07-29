@@ -22,11 +22,11 @@ exports.create = function(params) {
   var webnativeDetails = window.webnativeDetails || window.parent && window.parent.webnativeDetails,
     webnative = window.webnative || window.parent && window.parent.webnative,
     fs = webnativeDetails.fs;
-	if(webnative) {
+  if(webnative) {
     if(!fissionUserName) {
       webnative.authenticatedUsername().then(result => {fissionUserName = result});
     }
-		return new FissionUploader(params,webnative,fs);		
+    return new FissionUploader(params,webnative,fs);
 	} else {
 		return null;
 	}

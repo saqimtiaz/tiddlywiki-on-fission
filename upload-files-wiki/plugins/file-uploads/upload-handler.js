@@ -155,13 +155,13 @@ UploadTask.prototype.processTiddlerQueue = function(uploadHandlerCallback) {
 			}
 		}
 		if(tiddler) {
-				self.tiddlerInfo[title] = {
-					changeCount : self.wiki.getChangeCount(title)
-				}				
-				var uploadItem = self.getTiddlerUploadItem(tiddler);
-				self.uploader.uploadFile(uploadItem,function(status,item){
-					$tw.utils.nextTick(function(){uploadedTiddlerCallback(status,item)});
-				});
+			self.tiddlerInfo[title] = {
+				changeCount : self.wiki.getChangeCount(title)
+			}				
+			var uploadItem = self.getTiddlerUploadItem(tiddler);
+			self.uploader.uploadFile(uploadItem,function(status,item){
+				$tw.utils.nextTick(function(){uploadedTiddlerCallback(status,item)});
+			});
 		} else {
 			self.uploader.uploadEnd(uploadEndCallback);
 		}
