@@ -74,9 +74,9 @@ class App {
 	}
 
 	async getFileContents(url) {
-		if(url === "file://./static-publishing-wiki/output/index.html") {
+		if(url.startsWith("file://")) {
 			// Hack!
-			const text = await readFileAsync("./static-publishing-wiki/output/index.html","utf8");
+			const text = await readFileAsync(url.substring(7),"utf8"); //url.replace(/^file:\/\//,"");
 			return {text: text};
 		} else {
 			// Retrieve the URL contents
