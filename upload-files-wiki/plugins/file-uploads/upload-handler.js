@@ -134,7 +134,7 @@ UploadTask.prototype.processTiddlerQueue = function(uploadHandlerCallback) {
 				self.makeCanonicalURITiddler(item.title);
 				delete self.tiddlerInfo[item.title];
 				//below line is for debugging only
-			  //self.wiki.setText(item.title,"upload-status",null,"uploaded");
+				//self.wiki.setText(item.title,"upload-status",null,"uploaded");
 			}			
 			nextTiddlerIndex++;
 			uploadNextTiddler();

@@ -34,7 +34,7 @@ DummyUploader.prototype.uploadStart = function(callback) {
 };
 
 DummyUploader.prototype.getCanonicalURI = function(item) {
-  return `https://myusername.files.fission.name/p/${item.filename}`;
+	return `https://myusername.files.fission.name/p/${item.filename}`;
 }
 
 /*
@@ -44,13 +44,13 @@ callback accepts two arguments:
 	item: object corresponding to the tiddler being uploaded
 */
 DummyUploader.prototype.uploadFile = function(item,callback) {  
-  var self = this;
+	var self = this;
 	//this.items.push(item);
 	// Mock uploading the file by logging to console.
 	console.log(`Saved ${item.title}`);
-  var canonical_uri	= self.getCanonicalURI(item);
+	var canonical_uri	= self.getCanonicalURI(item);
 	// Set the canonical_uri if available 
-  item.canonical_uri = canonical_uri;
+	item.canonical_uri = canonical_uri;
 	// Set updateProgress to true if the progress bar should be updated
 	// For some uploaders where the data is just being added to the payload with no uploading taking place we may not want to update the progress bar
 	item.updateProgress = true;
