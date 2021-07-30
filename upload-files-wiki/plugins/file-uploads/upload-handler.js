@@ -19,7 +19,7 @@ function UploadHandler(options) {
 	this.wiki.addEventListener("change",function(changes){
 		var callback = function() {
 			delete self.uploadTask;
-			console.log("check for pending uploads");
+			console.log("checking for pending uploads");
 			// Check if there are any new tiddlers that need to be uploaded
 			$tw.utils.nextTick(upload);
 		};
@@ -55,8 +55,12 @@ function UploadTask(tiddlers,options) {
 
 UploadTask.prototype.run = function(uploadHandlerCallback){
 	var self = this;
-	self.uploader.uploadStart(function(){
-		self.processTiddlerQueue(uploadHandlerCallback);
+	self.uploader.initialize(function(err){
+		if(err) {
+			console.error("Error in uploader.initialize, aborting uploads");
+		} else {
+			self.processTiddlerQueue(uploadHandlerCallback);
+		}
 	});
 };
 
@@ -99,13 +103,15 @@ UploadTask.prototype.processTiddlerQueue = function(uploadHandlerCallback) {
 	var self = this;
 	var nextTiddlerIndex = 0;
 	
-	var uploadEndCallback = function(status,items) {
-		if(status) {
+	var deinitializeCallback = function(err,uploadInfoArray) {
+		if(err) {
+			console.error("Error in uploader deinitialize");
+		} else {
 			// Some uploaders may not have canonical_uris earlier and may pass an array of item objects with canonical_uri set
-			$tw.utils.each(items,function(item){
+			$tw.utils.each(uploadInfoArray,function(uploadInfo){
 				// For every uploaded tiddler save the canonical_uri if one has been returned
-				if(item.uploadComplete && item.canonical_uri && item.title && self.tiddlerInfo[item.title]) {
-					self.tiddlerInfo[item.title].canonical_uri = item.canonical_uri;
+				if(uploadInfo.uploadComplete && uploadInfo.canonical_uri && uploadInfo.title && self.tiddlerInfo[uploadInfo.title]) {
+					self.tiddlerInfo[uploadInfo.title].canonical_uri = uploadInfo.canonical_uri;
 				}
 			});
 			// Convert all uploaded tiddlers for which we have a canonical_uri to canonical_uri tiddlers
@@ -114,32 +120,30 @@ UploadTask.prototype.processTiddlerQueue = function(uploadHandlerCallback) {
 			}
 			delete self.uploader;
 			self.tiddlerInfo = {};
-			console.log("uploadEnd callback");
+			console.log("uploader deinitialize callback");
 			alert(`Uploaded`);
 			uploadHandlerCallback(true);
-		} else {
-			console.error("Error in uploadEnd");
 		}
 	};
 	
-	var uploadedTiddlerCallback = function(status,item) {
-		if(status) {
-			console.log(`upload callback for ${item.title}`);
+	var uploadedTiddlerCallback = function(err,uploadInfo) {
+		if(err) {
+			console.error(`there was an error uploading ${uploadInfo.title}, aborting uploads`);
+		} else {
+			console.log(`upload callback for ${uploadInfo.title}`);
 			// Save the canonical_uri if one has been set
-			if(item.canonical_uri) {
-				self.tiddlerInfo[item.title].canonical_uri = item.canonical_uri;
+			if(uploadInfo.canonical_uri) {
+				self.tiddlerInfo[uploadInfo.title].canonical_uri = uploadInfo.canonical_uri;
 			}
 			// If uploadComplete is true then convert the tiddler to a canonical_uri tiddler
-			if(item.uploadComplete) {
-				self.makeCanonicalURITiddler(item.title);
-				delete self.tiddlerInfo[item.title];
+			if(uploadInfo.uploadComplete) {
+				self.makeCanonicalURITiddler(uploadInfo.title);
+				delete self.tiddlerInfo[uploadInfo.title];
 				//below line is for debugging only
 				//self.wiki.setText(item.title,"upload-status",null,"uploaded");
 			}			
 			nextTiddlerIndex++;
 			uploadNextTiddler();
-		} else {
-			console.error(`there was an error uploading ${item.title}, aborting uploads`);
 		}
 	};
 	
@@ -157,13 +161,13 @@ UploadTask.prototype.processTiddlerQueue = function(uploadHandlerCallback) {
 		if(tiddler) {
 			self.tiddlerInfo[title] = {
 				changeCount : self.wiki.getChangeCount(title)
-			}				
+			}
 			var uploadItem = self.getTiddlerUploadItem(tiddler);
-			self.uploader.uploadFile(uploadItem,function(status,item){
-				$tw.utils.nextTick(function(){uploadedTiddlerCallback(status,item)});
+			self.uploader.uploadFile(uploadItem,function(err,uploadItemInfo){
+				$tw.utils.nextTick(function(){uploadedTiddlerCallback(err,uploadItemInfo)});
 			});
 		} else {
-			self.uploader.uploadEnd(uploadEndCallback);
+			self.uploader.deinitialize(deinitializeCallback);
 		}
 	};
 	uploadNextTiddler();

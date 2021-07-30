@@ -28,50 +28,52 @@ function DummyUploader(params) {
 	console.log("DummyUploader",params);
 };
 
-DummyUploader.prototype.uploadStart = function(callback) {
-	console.log("uploadStart");
-	callback([]);
+DummyUploader.prototype.initialize = function(callback) {
+	console.log("uploader initialize");
+	callback();
 };
 
-DummyUploader.prototype.getCanonicalURI = function(item) {
-	return `https://myusername.files.fission.name/p/${item.filename}`;
-}
-
 /*
-item: object representing tiddler to be uploaded
+Arguments:
+uploadItem: object representing tiddler to be uploaded
 callback accepts two arguments:
-	status: true if there was no error, otherwise false
-	item: object corresponding to the tiddler being uploaded
+	err: error object if there was an error
+	uploadItemInfo: object corresponding to the tiddler being uploaded with the following properties set:
+	- title
+	- canonical_uri (if available)
+	- uploadComplete (boolean)
 */
-DummyUploader.prototype.uploadFile = function(item,callback) {  
-	var self = this;
-	//this.items.push(item);
+DummyUploader.prototype.uploadFile = function(uploadItem,callback) {  
+	var self = this,
+		uploadInfo = { title: uploadItem.title };
+	//this.items.push(uploadItem);
 	// Mock uploading the file by logging to console.
-	console.log(`Saved ${item.title}`);
-	var canonical_uri	= self.getCanonicalURI(item);
+	console.log(`Saved ${uploadItem.title}`);
+	var canonical_uri = `https://myusername.files.fission.name/p/${uploadItem.filename}`
 	// Set the canonical_uri if available 
-	item.canonical_uri = canonical_uri;
+	uploadInfo.canonical_uri = canonical_uri;
 	// Set updateProgress to true if the progress bar should be updated
 	// For some uploaders where the data is just being added to the payload with no uploading taking place we may not want to update the progress bar
-	item.updateProgress = true;
+	uploadInfo.updateProgress = true;
 	// Set uploadComplete to true if the uploaded file has been persisted and is available at the canonical_uri
 	// This flag triggers the creation of a canonical_uri tiddler corresponding to the uploaded file
-	item.uploadComplete = false;
-	callback(true,item);
+	uploadInfo.uploadComplete = false;
+	callback(null,uploadInfo);
 };
 
 /*
+Arguments:
 callback accepts two arguments:
 	status: true if there was no error, otherwise false
-	items (optional): array of item objects corresponding to the tiddlers that have been uploaded
-		this is needed and should set the canonical_uri for each item if:
-		- (a) item.uploadComplete was not set to true in uploadFile AND 
-		- (b) item.canonical_uri was not set in uploadFile
- */
-DummyUploader.prototype.uploadEnd = function(callback) {
+	uploadInfoArray (optional): array of uploadInfo objects corresponding to the tiddlers that have been uploaded
+		this is needed and should set the canonical_uri for each uploadItem if:
+		- (a) uploadInfo.uploadComplete was not set to true in uploadFile AND 
+		- (b) uploadInfo.canonical_uri was not set in uploadFile
+*/
+DummyUploader.prototype.deinitialize = function(callback) {
 	// Mock finishing up operations that will complete the upload and persist the files
-	console.log("upload end");
-	callback(true);
+	console.log("uploader deinitialize");
+	callback();
 };
 
 })();
