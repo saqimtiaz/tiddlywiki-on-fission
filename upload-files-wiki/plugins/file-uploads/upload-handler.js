@@ -43,6 +43,19 @@ function UploadHandler(options) {
 		};
 		upload();
 	});
+	$tw.addUnloadTask(function(event) {
+		var confirmationMessage;
+		if(self.isDirty()) {
+			// Modern browsers do not use the specified string
+			confirmationMessage = $tw.language.getString("UnsavedChangesWarning");
+			event.returnValue = confirmationMessage; // Gecko			
+		}
+		return confirmationMessage;
+	});
+};
+
+UploadHandler.prototype.isDirty = function() {
+	return !!this.uploadTask;
 };
 
 function UploadTask(tiddlers,options) {
