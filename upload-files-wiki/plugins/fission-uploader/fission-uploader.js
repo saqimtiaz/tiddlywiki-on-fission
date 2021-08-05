@@ -1,5 +1,5 @@
 /*\
-title: $:/plugins/tiddlywiki/file-uploads/fission-uploader.js
+title: $:/plugins/tiddlywiki/file-uploads/uploader.js
 type: application/javascript
 module-type: uploader
 
@@ -26,18 +26,29 @@ exports.create = function(params) {
 		if(!fissionUserName) {
 			webnative.authenticatedUsername().then(result => {fissionUserName = result});
 		}
-		return new FissionUploader(params,webnative,fs);
+		if(webnative && webnativeDetails) {
+			return new FissionUploader(params,webnative,fs);
+		} else {
+			alert("Webnative is not available, are you using TiddlyWiki on Fission?");
+			return null;
+		}
 	} else {
 		return null;
 	}
 };
 
 function FissionUploader(params,webnative,fs) {
+	var self = this;
 	this.webnative = webnative;
 	this.params = params || {};
 	this.fs = fs;
 	// TODO Path should be taken from a config tiddler specific to the uploader
-	this.outputBasePath = ["public","photos"],
+	this.outputBasePath = ["public"];
+	var uploadFolder = $tw.wiki.getTiddlerText("$:/config/file-uploads/fission/uploadpath","files").trim().replace(/^\/|\/$/gm,"");
+	var uploadPath = uploadFolder.split("/");
+	$tw.utils.each(uploadPath,function(folder){
+		self.outputBasePath.push(folder);
+	})
 	console.log("FissionUploader",params);
 };
 

@@ -35,7 +35,9 @@ function UploadHandler(options) {
 						wiki: options.wiki,
 						uploaderConfig: self.wiki.getTiddlerText(self.titleUploader).trim()
 					});
-					self.uploadTask.run(callback);
+					if(self.uploadTask) {
+						self.uploadTask.run(callback);
+					}
 				}
 			} else {
 				console.log("no pending uploads");
@@ -118,7 +120,7 @@ UploadTask.prototype.processTiddlerQueue = function(uploadHandlerCallback) {
 	
 	var deinitializeCallback = function(err,uploadInfoArray) {
 		if(err) {
-			console.error("Error in uploader deinitialize");
+			console.error(err,"Error in uploader deinitialize");
 		} else {
 			// Some uploaders may not have canonical_uris earlier and may pass an array of item objects with canonical_uri set
 			$tw.utils.each(uploadInfoArray,function(uploadInfo){

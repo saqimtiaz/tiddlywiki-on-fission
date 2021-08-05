@@ -1,0 +1,11 @@
+caption: Uploads
+tags: $:/tags/SideBar
+title: file upload status
+
+<$vars uploadCount={{{ [subfilter{$:/config/fileUploadFilter}count[]] }}}>
+<$list filter="[<uploadCount>!match[0]]">
+@@background-color:yellow;font-weight:bold;color:black;
+Uploading <<uploadCount>> tiddlers.
+@@
+</$list>
+</$vars>
