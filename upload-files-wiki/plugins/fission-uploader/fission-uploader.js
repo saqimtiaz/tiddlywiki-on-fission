@@ -1,5 +1,5 @@
 /*\
-title: $:/plugins/tiddlywiki/file-uploads/uploader.js
+title: $:/plugins/tiddlywiki/file-uploads-fission/uploader.js
 type: application/javascript
 module-type: uploader
 
@@ -20,27 +20,23 @@ var fissionUserName;
 exports.create = function(params) {
 	//webnativeDetails does not provide access to webnative.path.file() and authenticatedUsername()
 	var webnativeDetails = window.webnativeDetails || window.parent && window.parent.webnativeDetails,
-		webnative = window.webnative || window.parent && window.parent.webnative,
-		fs = webnativeDetails.fs;
-	if(webnative) {
+		webnative = window.webnative || window.parent && window.parent.webnative;
+	if(webnative && webnativeDetails && webnativeDetails.fs) {
 		if(!fissionUserName) {
 			webnative.authenticatedUsername().then(result => {fissionUserName = result});
 		}
-		if(webnative && webnativeDetails) {
-			return new FissionUploader(params,webnative,fs);
-		} else {
-			alert("Webnative is not available, are you using TiddlyWiki on Fission?");
-			return null;
-		}
-	} else {
-		return null;
+		return new FissionUploader(params,webnative,webnativeDetails.fs);
 	}
+	//alert("Webnative is not available, are you using TiddlyWiki on Fission?");
+	params.logger.alert("Fission uploader could not be initialized. \n Webnative is not available, are you using ~TiddlyWiki on Fission?");
+	return null;
 };
 
 function FissionUploader(params,webnative,fs) {
 	var self = this;
 	this.webnative = webnative;
 	this.params = params || {};
+	this.logger = new $tw.utils.Logger("fission-uploader");
 	this.fs = fs;
 	// TODO Path should be taken from a config tiddler specific to the uploader
 	this.outputBasePath = ["public"];
@@ -49,11 +45,11 @@ function FissionUploader(params,webnative,fs) {
 	$tw.utils.each(uploadPath,function(folder){
 		self.outputBasePath.push(folder);
 	})
-	console.log("FissionUploader",params);
+	this.logger.log("FissionUploader",params);
 };
 
 FissionUploader.prototype.initialize = function(callback) {
-	console.log("uploader initialize");
+	this.logger.log("uploader initialize");
 	callback();
 };
 
@@ -102,7 +98,7 @@ FissionUploader.prototype.uploadFile = function(uploadItem,callback) {
 	self.fs.add(path,self._prepareUploadData(uploadItem)).then(function() {
 		var uploadInfo = { title: uploadItem.title },
 			canonical_uri = self._getCanonicalURI(uploadItem);
-		console.log(`Saved to ${path.file.join("/")} with canonical_uri ${canonical_uri}`);
+		self.logger.log(`Saved to ${path.file.join("/")} with canonical_uri ${canonical_uri}`);
 		 // Set the canonical_uri
 		uploadInfo.canonical_uri = canonical_uri;
 		// Set updateProgress to true if the progress bar should be updated
@@ -114,7 +110,7 @@ FissionUploader.prototype.uploadFile = function(uploadItem,callback) {
 		uploadInfo.uploadComplete = false;
 		callback(null,uploadInfo);
 	}).catch(function(err) {
-		alert(`Error saving file ${path.file.join("/")} to fission: ${err}`);
+		self.logger.alert(`Error saving file ${path.file.join("/")} to fission: ${err}`);
 		callback(err,uploadInfo);
 	});
 };
@@ -129,11 +125,12 @@ callback accepts two arguments:
 		- (b) uploadInfo.canonical_uri was not set in uploadFile
 */
 FissionUploader.prototype.deinitialize = function(callback) {
+	var self = this;
 	this.fs.publish().then(function() {
-		console.log("uploader deinitialize");
+		self.logger.log("uploader deinitialize");
 		callback();
 	}).catch(function(err) {
-		alert(`Error uploading to fission: ${err}`);
+		self.logger.alert(`Error uploading to fission: ${err} in uploader deinitialize`);
 		callback(err);
 	});
 };

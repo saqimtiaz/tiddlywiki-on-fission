@@ -91,12 +91,13 @@ function github(options) {
 
 exports.create = function(params) {
 	var githubInfo = {
-		username: $tw.wiki.getTiddlerText("$:/GitHub/Username").trim(),
-		reponame: $tw.wiki.getTiddlerText("$:/GitHub/Repo").trim(),
-		token: $tw.utils.getPassword("github").trim()
+		username: $tw.wiki.getTiddlerText("$:/GitHub/Username","").trim(),
+		reponame: $tw.wiki.getTiddlerText("$:/GitHub/Repo","").trim(),
+		token: ($tw.utils.getPassword("github") || "").trim()
 	}
 	if(!githubInfo.username || !githubInfo.reponame || !githubInfo.token) {
-		alert("Github repository details are not properly configured. Cannot upload files.");
+		//alert("Github repository details are not properly configured. Cannot upload files.");
+		params.logger.alert("Github repository details are not properly configured. Cannot upload files.");
 		return null;
 	}
 	return new GithubUploader(params,githubInfo);
@@ -105,12 +106,13 @@ exports.create = function(params) {
 function GithubUploader(params,githubInfo) {
 	this.params = params || {};
 	this.githubInfo = githubInfo;
+	this.logger = new $tw.utils.Logger("upload-handler");
 	this.files = [];
-	console.log("GithubUploader",params);
+	this.logger.log("GithubUploader",params);
 };
 
 GithubUploader.prototype.initialize = function(callback) {
-	console.log("uploader initialize");
+	this.logger.log("uploader initialize");
 	callback();
 };
 
@@ -160,12 +162,15 @@ callback accepts two arguments:
 		- (b) uploadInfo.canonical_uri was not set in uploadFile
 */
 GithubUploader.prototype.deinitialize = function(callback) {
-	// Mock finishing up operations that will complete the upload and persist the files
-	console.log("uploader deinitialize",this.files);
+	var self = this;
+	this.logger.log("uploader deinitialize",this.files);
 	var api = github(this.githubInfo);
 	api.commit(this.files,"Uploaded by TiddlyWiki")
 		.then(() => callback())
-		.catch((err) => callback(err));
+		.catch((err) => {
+			self.logger.alert("`Error uploading to github: ${err} in uploader deinitialize`");
+			callback(err);
+		});
 };
 
 })();

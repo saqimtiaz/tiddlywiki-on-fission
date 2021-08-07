@@ -12,16 +12,23 @@ The upload handler manages uploading binary tiddlers to external storage.
 
 UploadHandler.prototype.titleFileUploadFilter = "$:/config/fileUploadFilter";
 UploadHandler.prototype.titleUploader = "$:/config/fileUploader";
+UploadHandler.prototype.titleUploadedNotification = "$:/plugins/tiddlywiki/file-uploads/Notifications/Uploaded";
+UploadHandler.prototype.titleUploadingNotification = "$:/plugins/tiddlywiki/file-uploads/Notifications/Uploading";
 
 function UploadHandler(options) {
 	var self = this;
 	this.wiki = options.wiki;
+	this.logger = new $tw.utils.Logger("upload-handler");
 	this.wiki.addEventListener("change",function(changes){
-		var callback = function() {
+		var callback = function(err) {
 			delete self.uploadTask;
-			console.log("checking for pending uploads");
-			// Check if there are any new tiddlers that need to be uploaded
-			$tw.utils.nextTick(upload);
+			if(!err) {
+				//self.logger.clearAlerts();
+				$tw.notifier.display(self.titleUploadedNotification);
+				self.logger.log("checking for pending uploads");
+				// Check if there are any new tiddlers that need to be uploaded
+				$tw.utils.nextTick(upload);
+			}
 		};
 		var upload = function() {
 			var uploadFilter = self.wiki.getTiddlerText(self.titleFileUploadFilter),
@@ -31,19 +38,36 @@ function UploadHandler(options) {
 				// If an upload task is already in progress then new tiddlers that need to be uploaded will be picked up in the next task 
 				if(!self.uploadTask) {
 					// The tiddlers currently matching the upload filter are the paylaod for the upload task
-					self.uploadTask = new UploadTask(tiddlersToUpload,{
+					var uploadTask = new UploadTask(tiddlersToUpload,{
 						wiki: options.wiki,
-						uploaderConfig: self.wiki.getTiddlerText(self.titleUploader).trim()
+						uploaderConfig: self.wiki.getTiddlerText(self.titleUploader).trim(),
+						logger: self.logger
 					});
-					if(self.uploadTask) {
+					if(uploadTask && uploadTask.uploader) {
+						$tw.notifier.display(self.titleUploadingNotification,{variables:{
+							count: tiddlersToUpload.length.toString()
+						}});
+						self.uploadTask = uploadTask;
 						self.uploadTask.run(callback);
 					}
 				}
 			} else {
-				console.log("no pending uploads");
+				self.logger.log("no pending uploads");
 			}
 		};
-		upload();
+		// ToDo find a cleaner alternative for logging
+		// Filter out alert tiddlers from changes otherwise the alerts we show keep triggering the change listener
+		var changedTiddlers = [];
+		$tw.utils.each(changes,function(change,title){
+			var tiddler = self.wiki.tiddlerExists(title) && self.wiki.getTiddler(title);
+			if(tiddler){
+				changedTiddlers.push(title);
+			}
+		});
+		var filteredChanges = self.wiki.filterTiddlers("[!prefix[$:/temp/alerts/alert]]",null,self.wiki.makeTiddlerIterator(changedTiddlers));
+		if(filteredChanges.length > 0) {
+			upload();
+		}
 	});
 	$tw.addUnloadTask(function(event) {
 		var confirmationMessage;
@@ -65,14 +89,20 @@ function UploadTask(tiddlers,options) {
 	this.wiki = options.wiki;
 	this.taskTiddlers = tiddlers;
 	this.tiddlerInfo = {};
+	this.logger = options.logger;
 	this.uploader = this.getUploader(options.uploaderConfig);
+};
+
+UploadTask.prototype.displayError = function(msg,err) {
+	this.logger.alert(msg + ":",err);
 };
 
 UploadTask.prototype.run = function(uploadHandlerCallback){
 	var self = this;
 	self.uploader.initialize(function(err){
 		if(err) {
-			console.error("Error in uploader.initialize, aborting uploads");
+			self.displayError("Error in uploader.initialize, aborting uploads");
+			uploadHandlerCallback(err);
 		} else {
 			self.processTiddlerQueue(uploadHandlerCallback);
 		}
@@ -86,7 +116,7 @@ UploadTask.prototype.getUploader = function(uploaderName) {
 			uploader = module;
 		}
 	});
-	return uploader && uploader.create();	
+	return uploader && uploader.create({logger:this.logger});
 };
 
 // Returns true if changeCount in tiddlerInfo is the same as the current changeCount of the tiddler
@@ -120,7 +150,8 @@ UploadTask.prototype.processTiddlerQueue = function(uploadHandlerCallback) {
 	
 	var deinitializeCallback = function(err,uploadInfoArray) {
 		if(err) {
-			console.error(err,"Error in uploader deinitialize");
+			self.displayError(err,"Error in uploader deinitialize");
+			uploadHandlerCallback(err);
 		} else {
 			// Some uploaders may not have canonical_uris earlier and may pass an array of item objects with canonical_uri set
 			$tw.utils.each(uploadInfoArray,function(uploadInfo){
@@ -135,17 +166,18 @@ UploadTask.prototype.processTiddlerQueue = function(uploadHandlerCallback) {
 			}
 			delete self.uploader;
 			self.tiddlerInfo = {};
-			console.log("uploader deinitialize callback");
-			alert(`Uploaded`);
-			uploadHandlerCallback(true);
+			self.logger.log("uploader deinitialize callback");
+			self.logger.log("Uploads completed");
+			uploadHandlerCallback();
 		}
 	};
 	
 	var uploadedTiddlerCallback = function(err,uploadInfo) {
 		if(err) {
-			console.error(`there was an error uploading ${uploadInfo.title}, aborting uploads`);
+			self.displayError(`there was an error uploading ${uploadInfo.title}, aborting uploads`);
+			uploadHandlerCallback(err);
 		} else {
-			console.log(`upload callback for ${uploadInfo.title}`);
+			self.logger.log(`upload callback for ${uploadInfo.title}`);
 			// Save the canonical_uri if one has been set
 			if(uploadInfo.canonical_uri) {
 				self.tiddlerInfo[uploadInfo.title].canonical_uri = uploadInfo.canonical_uri;

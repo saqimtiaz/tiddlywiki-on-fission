@@ -25,6 +25,7 @@ exports.create = function(params) {
 function DummyUploader(params) {
 	this.params = params || {};
 	this.items = [];
+	this.logger = params.logger;
 	console.log("DummyUploader",params);
 };
 
