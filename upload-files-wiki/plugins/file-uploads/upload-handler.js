@@ -14,12 +14,17 @@ UploadHandler.prototype.titleFileUploadFilter = "$:/config/fileUploadFilter";
 UploadHandler.prototype.titleUploader = "$:/config/fileUploader";
 UploadHandler.prototype.titleUploadedNotification = "$:/plugins/tiddlywiki/file-uploads/Notifications/Uploaded";
 UploadHandler.prototype.titleUploadingNotification = "$:/plugins/tiddlywiki/file-uploads/Notifications/Uploading";
+UploadHandler.prototype.titleUploadsEnabled = "$:/config/fileUploads/uploadsEnabled";
 
 function UploadHandler(options) {
 	var self = this;
 	this.wiki = options.wiki;
 	this.logger = new $tw.utils.Logger("upload-handler");
 	this.wiki.addEventListener("change",function(changes){
+		var uploadsEnabled = self.wiki.getTiddlerText(self.titleUploadsEnabled,"yes").trim() === "yes";
+		if(!uploadsEnabled) {
+			return;
+		}
 		var callback = function(err) {
 			delete self.uploadTask;
 			if(!err) {
