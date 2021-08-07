@@ -106,7 +106,7 @@ exports.create = function(params) {
 function GithubUploader(params,githubInfo) {
 	this.params = params || {};
 	this.githubInfo = githubInfo;
-	this.logger = new $tw.utils.Logger("upload-handler");
+	this.logger = new $tw.utils.Logger("github-uploader");
 	this.files = [];
 	this.logger.log("GithubUploader",params);
 };

@@ -25,12 +25,12 @@ exports.create = function(params) {
 function DummyUploader(params) {
 	this.params = params || {};
 	this.items = [];
-	this.logger = params.logger;
-	console.log("DummyUploader",params);
+	this.logger = new $tw.utils.Logger("dummy-uploader");
+	this.logger.log("DummyUploader",params);
 };
 
 DummyUploader.prototype.initialize = function(callback) {
-	console.log("uploader initialize");
+	this.logger.log("uploader initialize");
 	callback();
 };
 
@@ -49,7 +49,7 @@ DummyUploader.prototype.uploadFile = function(uploadItem,callback) {
 		uploadInfo = { title: uploadItem.title };
 	//this.items.push(uploadItem);
 	// Mock uploading the file by logging to console.
-	console.log(`Saved ${uploadItem.title}`);
+	this.logger.log(`Saved ${uploadItem.title}`);
 	var canonical_uri = `https://myusername.files.fission.name/p/${uploadItem.filename}`
 	// Set the canonical_uri if available 
 	uploadInfo.canonical_uri = canonical_uri;
@@ -73,7 +73,7 @@ callback accepts two arguments:
 */
 DummyUploader.prototype.deinitialize = function(callback) {
 	// Mock finishing up operations that will complete the upload and persist the files
-	console.log("uploader deinitialize");
+	this.logger.log("uploader deinitialize");
 	callback();
 };
 
