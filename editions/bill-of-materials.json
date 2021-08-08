@@ -22,6 +22,6 @@
 	{
 		"name": "file-upload-wiki",
 		"description": "An experimental build with TW5's under development file upload plugin. Only for testing and development!",
-		"url": "file://./upload-files-wiki/output/index.html"
+		"url": "file://../upload-files-wiki/output/index.html"
 	}
 ]

@@ -14,8 +14,7 @@
   "scripts": {
     "start": "npm run build && npx http-server app-wiki/output -c-1",
     "build": "npx tiddlywiki static-publishing-wiki --verbose --build index && npm run build-upload-wiki && node ./bin/collect-editions.js && npx tiddlywiki app-wiki --verbose --build index",
-    "build-upload-wiki": "npx tiddlywiki upload-files-wiki --verbose --build index",
-    "dev-upload-wiki": "npx nodemon -e tid,multids,js,info --watch upload-files-wiki/plugins ./node_modules/tiddlywiki/tiddlywiki.js upload-files-wiki --listen port=7111"
+    "build-upload-wiki": "npx tiddlywiki ../upload-files-wiki --verbose --build index"
   },
   "author": "Jeremy Ruston",
   "license": "MIT"
